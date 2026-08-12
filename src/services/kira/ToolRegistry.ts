@@ -1,6 +1,25 @@
 import { FunctionDeclaration, Type } from "@google/genai";
+import { getCatalogAndNovelties } from "../catalogService";
 
 // --- KIRA CORE STANDARD TOOL DECLARATIONS ---
+
+export const consultarNovedadesYCatalogoDeclaration: FunctionDeclaration = {
+  name: "consultar_novedades_y_catalogo",
+  description: "Consulta la base de conocimientos oficial de DesignSoft para obtener detalles de productos, licencias, características técnicas o los nuevos módulos y actualizaciones agregados recientemente.",
+  parameters: {
+    type: Type.OBJECT,
+    properties: {
+      categoria: {
+        type: Type.STRING,
+        description: "Categoría opcional de consulta: 'novedades', 'pos', 'facturacion', 'medico' o 'general'."
+      },
+      busqueda: {
+        type: Type.STRING,
+        description: "Término de búsqueda específico (ej: 'restaurante', 'comandas', 'hacienda', 'receta medica')."
+      }
+    }
+  }
+};
 
 export const consultarNovedadesDeclaration: FunctionDeclaration = {
   name: "consultar_novedades_y_actualizaciones",
@@ -65,6 +84,7 @@ export const transferirAHumanoDeclaration: FunctionDeclaration = {
 };
 
 export const KIRA_TOOL_DECLARATIONS: FunctionDeclaration[] = [
+  consultarNovedadesYCatalogoDeclaration,
   consultarNovedadesDeclaration,
   buscarProductoDeclaration,
   consultarTicketDeclaration,
@@ -76,10 +96,12 @@ export const KIRA_TOOL_DECLARATIONS: FunctionDeclaration[] = [
 export class ToolRegistry {
   public static async executeTool(name: string, args: any): Promise<any> {
     switch (name) {
+      case "consultar_novedades_y_catalogo":
+        return getCatalogAndNovelties({ categoria: args?.categoria, busqueda: args?.busqueda });
       case "consultar_novedades_y_actualizaciones":
-        return this.executeConsultarNovedades(args);
+        return getCatalogAndNovelties({ categoria: "novedades", busqueda: args?.modulo });
       case "buscar_producto_o_servicio":
-        return this.executeBuscarProducto(args);
+        return getCatalogAndNovelties({ busqueda: args?.busqueda });
       case "consultar_ticket_soporte":
         return this.executeConsultarTicket(args);
       case "transferir_a_humano":
@@ -87,81 +109,6 @@ export class ToolRegistry {
       default:
         throw new Error(`Herramienta no registrada en Kira ToolRegistry: ${name}`);
     }
-  }
-
-  private static executeConsultarNovedades(args: { modulo?: string }) {
-    return {
-      actualizaciones: [
-        {
-          fecha: '2026-08-01',
-          version: 'POS Restaurantes v5.2',
-          novedades: 'Soporte para comandas táctiles desde teléfonos Android y sincronización directa con impresoras térmicas Bluetooth.'
-        },
-        {
-          fecha: '2026-07-15',
-          version: 'Hacienda ATV Costa Rica v4.3',
-          novedades: 'Renovación automática de llaves criptográficas y validación previa de XML de compras tributarias.'
-        },
-        {
-          fecha: '2026-06-20',
-          version: 'DesignSoft Médica Cloud',
-          novedades: 'Integración de firma digital avanzada para recetas médicas y recordatorios de citas automatizados por WhatsApp.'
-        }
-      ]
-    };
-  }
-
-  private static executeBuscarProducto(args: { busqueda?: string }) {
-    const catalog = [
-      {
-        id: 'pos-restaurantes',
-        nombre: 'DesignSoft POS Restaurantes & Bares',
-        categoria: 'Puntos de Venta',
-        precioMensualCRC: '₡35,000 IVI',
-        precioMensualUSD: '$70 USD',
-        caracteristicas: [
-          'Comandas táctiles para meseros',
-          'Control de insumos y recetas por gramos',
-          'Facturación Electrónica Hacienda ATV v4.3',
-          'Arqueos y Cierre Z en tiempo real'
-        ]
-      },
-      {
-        id: 'facturacion-pyme',
-        nombre: 'DesignSoft Facturación Electrónica Cloud',
-        categoria: 'Facturación & ERP',
-        precioMensualCRC: '₡15,000 IVI',
-        precioMensualUSD: '$30 USD',
-        caracteristicas: [
-          'Emisión ilimitada de comprobantes',
-          'Aceptación automática de XML',
-          'Envío directo a correo y WhatsApp del cliente'
-        ]
-      },
-      {
-        id: 'sistema-medico',
-        nombre: 'DesignSoft Médica - Expediente Clínico',
-        categoria: 'Salud & Clínicas',
-        precioMensualCRC: '₡45,000 IVI',
-        precioMensualUSD: '$90 USD',
-        caracteristicas: [
-          'Expediente clínico avalado por el Colegio de Médicos de CR',
-          'Recetas con firma digital',
-          'Agenda interactiva de citas'
-        ]
-      }
-    ];
-
-    if (!args.busqueda) return { resultados: catalog };
-
-    const term = args.busqueda.toLowerCase();
-    const filtered = catalog.filter(p => 
-      p.nombre.toLowerCase().includes(term) || 
-      p.categoria.toLowerCase().includes(term) ||
-      p.caracteristicas.some(c => c.toLowerCase().includes(term))
-    );
-
-    return { resultados: filtered.length > 0 ? filtered : catalog };
   }
 
   private static executeConsultarTicket(args: { numeroTicket: string }) {
