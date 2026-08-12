@@ -8,6 +8,7 @@ import { DashboardView } from './views/DashboardView';
 import { AgentsView } from './views/AgentsView';
 import { ChatsView } from './views/ChatsView';
 import { CallsView } from './views/CallsView';
+import { ChannelsView } from './views/ChannelsView';
 import { LiveFeedView } from './views/LiveFeedView';
 import { SettingsView } from './views/SettingsView';
 
@@ -191,6 +192,12 @@ export default function App() {
 
         {currentView === 'calls' && (
           <CallsView
+            language={language}
+          />
+        )}
+
+        {currentView === 'channels' && (
+          <ChannelsView
             language={language}
           />
         )}
