@@ -40,3 +40,4 @@ curl https://omnichannel.wiazart.com/api/health
 | `crm_update_profile` | Update mutable fields en perfil CRM |
 | `send_message` | Outbound WhatsApp / SMS |
 | `calendar_check` | Disponibilidad para reservas |
+
