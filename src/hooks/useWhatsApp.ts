@@ -9,7 +9,7 @@ export interface WhatsAppState {
   loggedOut: boolean;
 }
 
-const WS_URL = import.meta.env.VITE_WHATSAPP_WS_URL || 'wss://ws.qr.wiazart.com/?token=dsai-qr-secret-2026';
+const WS_URL = import.meta.env.VITE_WHATSAPP_WS_URL || 'wss://qr.wiazart.com/?token=dsai-qr-secret-2026';
 
 /**
  * Hook que mantiene una conexión WebSocket con el WhatsApp Worker
