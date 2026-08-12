@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Language, ChatItem, ChatMessage } from '../types';
 import { getTranslation } from '../translations';
 import { getChats, sendChatMessage, realtimeClient } from '../api';
+import { exportChatsToCSV } from '../utils/exportCsv';
 import { 
   MessageSquare, 
   Search, 
@@ -15,7 +16,8 @@ import {
   RefreshCw,
   Sparkles,
   Wifi,
-  ShieldAlert
+  ShieldAlert,
+  Download
 } from 'lucide-react';
 
 interface ChatsViewProps {
@@ -78,6 +80,12 @@ export const ChatsView: React.FC<ChatsViewProps> = ({ language }) => {
     setIsSyncing(true);
     await loadChats();
     setTimeout(() => setIsSyncing(false), 500);
+  };
+
+  const handleExportCSV = () => {
+    const dataToExport = filteredChats.length > 0 ? filteredChats : chats;
+    const dateStr = new Date().toISOString().split('T')[0];
+    exportChatsToCSV(dataToExport, `designsoft_chats_${dateStr}.csv`);
   };
 
   const handleSend = async (e: React.FormEvent) => {
@@ -147,6 +155,16 @@ export const ChatsView: React.FC<ChatsViewProps> = ({ language }) => {
         </div>
 
         <div className="flex items-center gap-3">
+          <button
+            onClick={handleExportCSV}
+            disabled={chats.length === 0}
+            className="px-3.5 py-2 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 text-xs font-semibold flex items-center gap-2 border border-emerald-500/30 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            title={language === 'en' ? 'Export chat logs to CSV' : 'Exportar registro de chats a CSV'}
+          >
+            <Download className="w-3.5 h-3.5 text-emerald-400" />
+            <span>{language === 'en' ? 'Export CSV' : 'Exportar CSV'}</span>
+          </button>
+
           <button
             onClick={handleRefresh}
             disabled={isSyncing}

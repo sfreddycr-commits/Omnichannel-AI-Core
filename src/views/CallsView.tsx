@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Language, CallItem } from '../types';
 import { getCalls, realtimeClient } from '../api';
+import { exportCallsToCSV } from '../utils/exportCsv';
 import { 
   PhoneCall, 
   PhoneOff, 
@@ -13,7 +14,8 @@ import {
   Activity, 
   Volume2, 
   Sparkles, 
-  AlertCircle
+  AlertCircle,
+  Download
 } from 'lucide-react';
 
 interface CallsViewProps {
@@ -80,6 +82,12 @@ export const CallsView: React.FC<CallsViewProps> = ({ language }) => {
     setTimeout(() => setIsSyncing(false), 500);
   };
 
+  const handleExportCSV = () => {
+    const dataToExport = filteredCalls.length > 0 ? filteredCalls : calls;
+    const dateStr = new Date().toISOString().split('T')[0];
+    exportCallsToCSV(dataToExport, `designsoft_llamadas_${dateStr}.csv`);
+  };
+
   const selectedCall = calls.find(c => c.id === selectedCallId) || calls[0];
 
   const filteredCalls = calls.filter(call => {
@@ -119,6 +127,16 @@ export const CallsView: React.FC<CallsViewProps> = ({ language }) => {
         </div>
 
         <div className="flex items-center gap-3">
+          <button
+            onClick={handleExportCSV}
+            disabled={calls.length === 0}
+            className="px-3.5 py-2 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 text-xs font-semibold flex items-center gap-2 border border-emerald-500/30 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            title={language === 'en' ? 'Export call logs to CSV' : 'Exportar registro de llamadas a CSV'}
+          >
+            <Download className="w-3.5 h-3.5 text-emerald-400" />
+            <span>{language === 'en' ? 'Export CSV' : 'Exportar CSV'}</span>
+          </button>
+
           <button
             onClick={handleRefresh}
             disabled={isSyncing}
