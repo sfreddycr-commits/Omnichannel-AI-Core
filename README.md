@@ -41,3 +41,5 @@ curl https://omnichannel.wiazart.com/api/health
 | `send_message` | Outbound WhatsApp / SMS |
 | `calendar_check` | Disponibilidad para reservas |
 
+
+<!-- webhook test 1786576114 -->
