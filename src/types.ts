@@ -1,5 +1,12 @@
-export type ViewMode = 'login' | 'dashboard' | 'agents' | 'feed' | 'settings';
+export type ViewMode = 'login' | 'dashboard' | 'agents' | 'feed' | 'chats' | 'calls' | 'settings';
 export type Language = 'en' | 'es';
+
+export interface KnowledgeFile {
+  id: string;
+  name: string;
+  size: string;
+  uploadedAt: string;
+}
 
 export interface Agent {
   id: string;
@@ -14,14 +21,48 @@ export interface Agent {
   tone: string;
   autoResolution: boolean;
   systemPrompt: string;
-  knowledgeBaseFiles: KnowledgeFile[];
+  knowledgeBaseFiles?: KnowledgeFile[];
 }
 
-export interface KnowledgeFile {
+export interface ChatMessage {
   id: string;
-  name: string;
-  size: string;
-  uploadedAt: string;
+  sender: 'user' | 'ai' | 'agent' | 'system';
+  text: string;
+  timestamp: string;
+  status?: 'sent' | 'delivered' | 'read';
+}
+
+export interface ChatItem {
+  id: string;
+  clientName: string;
+  phoneNumber: string;
+  lastMessage: string;
+  department: 'Support' | 'Sales' | 'Collections' | 'General';
+  timestamp: string;
+  unreadCount: number;
+  avatar?: string;
+  isAiManaged: boolean;
+  messages: ChatMessage[];
+}
+
+export interface CallTranscriptSegment {
+  id: string;
+  speaker: 'caller' | 'ai' | 'agent';
+  text: string;
+  timestamp: string;
+}
+
+export interface CallItem {
+  id: string;
+  callerNumber: string;
+  callerName?: string;
+  status: 'en_vivo' | 'finalizada'; // 'en vivo' or 'finalizada'
+  assignedAgent: string;
+  department: string;
+  durationSeconds: number;
+  startedAt: string;
+  transcript: CallTranscriptSegment[];
+  sentiment?: 'positive' | 'neutral' | 'frustrated';
 }
 
 export interface Session {

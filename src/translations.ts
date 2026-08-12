@@ -18,6 +18,8 @@ export const translations = {
     
     // Navigation
     dashboard: 'Dashboard',
+    chats: 'Chats (WhatsApp)',
+    calls: 'Calls (Voice)',
     aiAgents: 'AI Agents',
     liveFeed: 'Live Feed',
     integrations: 'Integrations',
@@ -146,6 +148,8 @@ export const translations = {
     
     // Navigation
     dashboard: 'Panel Principal',
+    chats: 'Chats (WhatsApp)',
+    calls: 'Llamadas (Voz)',
     aiAgents: 'Agentes IA',
     liveFeed: 'Transmisión en Vivo',
     integrations: 'Integraciones',
