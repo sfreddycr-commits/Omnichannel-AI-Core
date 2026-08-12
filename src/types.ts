@@ -1,5 +1,6 @@
 export type ViewMode = 'login' | 'dashboard' | 'agents' | 'feed' | 'chats' | 'calls' | 'settings';
 export type Language = 'en' | 'es';
+export type ThemeMode = 'light' | 'dark';
 
 export interface KnowledgeFile {
   id: string;

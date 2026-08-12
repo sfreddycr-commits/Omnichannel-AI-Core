@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { ViewMode, Language, Agent, Session, SystemAlert } from './types';
+import React, { useState, useEffect } from 'react';
+import { ViewMode, Language, ThemeMode, Agent, Session, SystemAlert } from './types';
+import { getAgents } from './api';
 import { SideNavBar } from './components/SideNavBar';
 import { TopAppBar } from './components/TopAppBar';
 import { LoginView } from './views/LoginView';
@@ -13,14 +14,25 @@ import { SettingsView } from './views/SettingsView';
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(true);
   const [currentView, setCurrentView] = useState<ViewMode>('dashboard');
-  const [language, setLanguage] = useState<Language>('es'); // Default to Spanish as requested
+  const [language, setLanguage] = useState<Language>('es'); // Default Spanish
+  const [theme, setTheme] = useState<ThemeMode>('light'); // Default LIGHT theme per user request
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
 
-  // Local Agents State fallback
+  // Agents state fetched from API
   const [agents, setAgents] = useState<Agent[]>([]);
 
-  // Initial Mock Sessions Data for LiveFeed
+  useEffect(() => {
+    getAgents().then(data => {
+      setAgents(data);
+    }).catch(err => console.error('Failed to fetch initial agents:', err));
+  }, []);
+
+  const handleToggleTheme = () => {
+    setTheme(prev => prev === 'light' ? 'dark' : 'light');
+  };
+
+  // Initial Sessions Data for LiveFeed
   const [sessions, setSessions] = useState<Session[]>([
     {
       id: 'session-1',
@@ -123,14 +135,22 @@ export default function App() {
     );
   }
 
+  const isLight = theme === 'light';
+
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans relative antialiased selection:bg-indigo-500 selection:text-white">
+    <div className={`min-h-screen font-sans relative antialiased transition-colors duration-200 selection:bg-blue-500 selection:text-white ${
+      isLight 
+        ? 'bg-[#F8FAFC] text-[#1E293B]' 
+        : 'bg-slate-950 text-slate-100'
+    }`}>
       {/* Side Navigation Bar */}
       <SideNavBar
         currentView={currentView}
         onViewChange={setCurrentView}
         language={language}
         onLanguageChange={setLanguage}
+        theme={theme}
+        onToggleTheme={handleToggleTheme}
         isOpenMobile={isMobileMenuOpen}
         onCloseMobile={() => setIsMobileMenuOpen(false)}
         onLogout={() => {
@@ -143,7 +163,9 @@ export default function App() {
       <TopAppBar
         currentView={currentView}
         language={language}
+        theme={theme}
         onLanguageChange={setLanguage}
+        onToggleTheme={handleToggleTheme}
         onToggleMobileMenu={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
         alerts={alerts}
         searchQuery={searchQuery}
