@@ -9,7 +9,7 @@ const PORT = Number(process.env.PORT ?? 3000);
 const NODE_ENV = process.env.NODE_ENV ?? "development";
 const APP_URL = process.env.APP_URL ?? "https://omnichannel.wiazart.com";
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY ?? "";
-const GEMINI_MODEL = process.env.GEMINI_MODEL ?? "gemini-2.0-flash";
+const GEMINI_MODEL = process.env.GEMINI_MODEL ?? "gemini-flash-latest";
 const KIRA_VERSION = "1.0.0";
 
 const startedAt = new Date();
