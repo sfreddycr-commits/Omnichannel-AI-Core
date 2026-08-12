@@ -1,0 +1,6 @@
+{
+  "name": "AI Brain Terminal",
+  "description": "Enterprise AI Brain infrastructure platform with neural core authentication, global operations dashboard, AI agent configuration, live omnichannel feed, and infrastructure settings with English and Spanish language toggle.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
