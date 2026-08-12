@@ -404,3 +404,50 @@ export class RealtimeClient {
 }
 
 export const realtimeClient = new RealtimeClient();
+
+// --- DesignSoft Omnichannel Helper Services ---
+export async function sendWhatsAppWebhook(phoneNumber: string, customerName: string, messageText: string) {
+  try {
+    const res = await fetch('/api/whatsapp/webhook', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phoneNumber, customerName, messageText })
+    });
+    return await res.json();
+  } catch (e) {
+    console.error('Failed to send WhatsApp Webhook:', e);
+    return {
+      status: 'simulated_fallback',
+      phoneNumber,
+      response: 'Respuesta generada en modo offline. DesignSoft POS Restaurantes incluye comandas táctiles e integración directa con Hacienda.'
+    };
+  }
+}
+
+export async function simulateVoipCall(callerNumber: string, callerName: string, initialQuery: string) {
+  try {
+    const res = await fetch('/api/calls/simulate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ callerNumber, callerName, initialQuery })
+    });
+    return await res.json();
+  } catch (e) {
+    console.error('Failed to simulate VoIP call:', e);
+    return null;
+  }
+}
+
+export async function generateCrmQuote(nombreCliente: string, telefonoWhatsApp: string, productoId: string, numUsuarios?: number) {
+  try {
+    const res = await fetch('/api/crm/quote', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nombreCliente, telefonoWhatsApp, productoId, numUsuarios })
+    });
+    return await res.json();
+  } catch (e) {
+    console.error('Failed to generate CRM quote:', e);
+    return null;
+  }
+}

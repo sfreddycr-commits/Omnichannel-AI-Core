@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Language, Agent } from '../types';
 import { getTranslation } from '../translations';
+import { sendWhatsAppWebhook, simulateVoipCall } from '../api';
 import { 
   RefreshCw, 
   Users, 
@@ -15,7 +16,11 @@ import {
   ShoppingCart,
   Headphones,
   Wallet,
-  Settings2
+  Settings2,
+  PhoneCall,
+  Send,
+  Bot,
+  Sparkles
 } from 'lucide-react';
 
 interface DashboardViewProps {
@@ -33,6 +38,37 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 }) => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [syncedToast, setSyncedToast] = useState(false);
+
+  // Test bench state for DesignSoft Empleado Digital
+  const [waMessageInput, setWaMessageInput] = useState('Hola, ¿cuánto cuesta la licencia mensual del POS para restaurantes en colones?');
+  const [waPhoneInput, setWaPhoneInput] = useState('+506 8899-1234');
+  const [waResponseOutput, setWaResponseOutput] = useState<string | null>(null);
+  const [waLoading, setWaLoading] = useState(false);
+
+  const [voipPhoneInput, setVoipPhoneInput] = useState('+506 2200-5555');
+  const [voipQueryInput, setVoipQueryInput] = useState('Buenas tardes, ocupo un ticket de soporte para la firma de facturación en Hacienda.');
+  const [voipResultOutput, setVoipResultOutput] = useState<any | null>(null);
+  const [voipLoading, setVoipLoading] = useState(false);
+
+  const handleTestWhatsApp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!waMessageInput.trim()) return;
+    setWaLoading(true);
+    setWaResponseOutput(null);
+    const result = await sendWhatsAppWebhook(waPhoneInput, 'Restaurante El Sol CR', waMessageInput);
+    setWaResponseOutput(result.response || 'Respuesta generada');
+    setWaLoading(false);
+  };
+
+  const handleTestVoip = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!voipQueryInput.trim()) return;
+    setVoipLoading(true);
+    setVoipResultOutput(null);
+    const result = await simulateVoipCall(voipPhoneInput, 'Clínica Dental CR', voipQueryInput);
+    setVoipResultOutput(result);
+    setVoipLoading(false);
+  };
 
   const handleSyncData = () => {
     setIsRefreshing(true);
@@ -283,6 +319,150 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 <div className="text-[10px] text-slate-400 mt-1.5 font-medium">55 mins ago</div>
               </div>
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* DesignSoft Digital Employee Real-Time Test Console */}
+      <div className="bg-white rounded-2xl border border-blue-200 shadow-xs p-6 space-y-6">
+        <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-600">
+              <Sparkles className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="font-extrabold text-lg text-slate-900 tracking-tight flex items-center gap-2">
+                <span>Consola de Pruebas: Empleado Digital DesignSoft</span>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-blue-100 text-blue-800 border border-blue-200">
+                  Gemini Agent
+                </span>
+              </h2>
+              <p className="text-xs text-slate-500 font-medium">
+                Prueba de integración en tiempo real para WhatsApp Webhook y llamadas VoIP / SIP con Function Calling activo.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* WhatsApp Webhook Test Box */}
+          <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
+            <div className="flex items-center gap-2 text-sm font-bold text-slate-800">
+              <MessageSquare className="w-4 h-4 text-emerald-600" />
+              <span>Simular Mensaje Entrante WhatsApp</span>
+            </div>
+            <form onSubmit={handleTestWhatsApp} className="space-y-3">
+              <div>
+                <label className="text-[11px] font-semibold text-slate-500 block mb-1">Teléfono / WhatsApp (Costa Rica)</label>
+                <input
+                  type="text"
+                  value={waPhoneInput}
+                  onChange={(e) => setWaPhoneInput(e.target.value)}
+                  className="w-full bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-medium focus:ring-2 focus:ring-blue-500/30 focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="text-[11px] font-semibold text-slate-500 block mb-1">Mensaje del Cliente</label>
+                <textarea
+                  rows={2}
+                  value={waMessageInput}
+                  onChange={(e) => setWaMessageInput(e.target.value)}
+                  className="w-full bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-medium focus:ring-2 focus:ring-blue-500/30 focus:outline-none"
+                ></textarea>
+              </div>
+              <button
+                type="submit"
+                disabled={waLoading}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs py-2 rounded-lg transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-xs disabled:opacity-50"
+              >
+                {waLoading ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <span>Procesando en Gemini IA...</span>
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-3.5 h-3.5" />
+                    <span>Enviar a Webhook WhatsApp</span>
+                  </>
+                )}
+              </button>
+            </form>
+
+            {waResponseOutput && (
+              <div className="mt-3 p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-xs text-emerald-900 space-y-1">
+                <div className="font-bold text-emerald-800 flex items-center gap-1.5">
+                  <Bot className="w-4 h-4 text-emerald-600" />
+                  <span>Respuesta Autónoma de Gemini:</span>
+                </div>
+                <p className="leading-relaxed bg-white p-2 rounded border border-emerald-100 text-slate-800">
+                  {waResponseOutput}
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* VoIP Call Test Box */}
+          <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
+            <div className="flex items-center gap-2 text-sm font-bold text-slate-800">
+              <PhoneCall className="w-4 h-4 text-blue-600" />
+              <span>Simular Llamada Entrante VoIP / SIP</span>
+            </div>
+            <form onSubmit={handleTestVoip} className="space-y-3">
+              <div>
+                <label className="text-[11px] font-semibold text-slate-500 block mb-1">Número Llamante (PBX Asterisk)</label>
+                <input
+                  type="text"
+                  value={voipPhoneInput}
+                  onChange={(e) => setVoipPhoneInput(e.target.value)}
+                  className="w-full bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-medium focus:ring-2 focus:ring-blue-500/30 focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="text-[11px] font-semibold text-slate-500 block mb-1">Consulta Inicial por Voz (STT)</label>
+                <textarea
+                  rows={2}
+                  value={voipQueryInput}
+                  onChange={(e) => setVoipQueryInput(e.target.value)}
+                  className="w-full bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-medium focus:ring-2 focus:ring-blue-500/30 focus:outline-none"
+                ></textarea>
+              </div>
+              <button
+                type="submit"
+                disabled={voipLoading}
+                className="w-full bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs py-2 rounded-lg transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-xs disabled:opacity-50"
+              >
+                {voipLoading ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <span>Conectando canal SIP...</span>
+                  </>
+                ) : (
+                  <>
+                    <PhoneCall className="w-3.5 h-3.5 text-blue-400" />
+                    <span>Iniciar Llamada en Vivo</span>
+                  </>
+                )}
+              </button>
+            </form>
+
+            {voipResultOutput && (
+              <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg text-xs space-y-2">
+                <div className="font-bold text-blue-900 flex items-center justify-between">
+                  <span>Llamada Activa en Servidor VoIP</span>
+                  <span className="px-2 py-0.5 rounded bg-blue-600 text-white text-[10px] uppercase font-mono">
+                    {voipResultOutput.status}
+                  </span>
+                </div>
+                <div className="bg-white p-2 rounded border border-blue-100 space-y-1">
+                  {voipResultOutput.transcript?.map((t: any, idx: number) => (
+                    <div key={idx} className="text-[11px]">
+                      <strong className="text-slate-700">{t.speaker}:</strong> <span className="text-slate-800">{t.text}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
