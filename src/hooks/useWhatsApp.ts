@@ -46,14 +46,15 @@ export function useWhatsApp() {
 
           switch (data.type) {
             case 'status':
-              setState({
+              setState(prev => ({
+                ...prev,
                 connected: data.connected,
                 qrAvailable: data.qr_available,
-                qrData: data.qr_available ? state.qrData : null,
+                qrData: data.qr_available ? prev.qrData : null,
                 loading: false,
                 error: null,
                 loggedOut: data.logged_out ?? false,
-              });
+              }));
               break;
 
             case 'qr':
@@ -101,7 +102,7 @@ export function useWhatsApp() {
       console.error('[whatsapp] Connection error', err);
       setState(prev => ({ ...prev, loading: false, error: 'No se pudo conectar al servicio de WhatsApp' }));
     }
-  }, [state.qrData]);
+  }, []);
 
   // Conectar al montar
   useEffect(() => {
