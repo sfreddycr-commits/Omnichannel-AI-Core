@@ -9,8 +9,6 @@ import {
   Eye, 
   EyeOff, 
   Cloud, 
-  Server, 
-  Radio, 
   Check, 
   ChevronDown,
   Trash2,
@@ -23,8 +21,10 @@ interface SettingsViewProps {
 
 export const SettingsView: React.FC<SettingsViewProps> = ({ language }) => {
   const [waEngine, setWaEngine] = useState<'meta' | 'baileys'>('meta');
-  const [voiceProvider, setVoiceProvider] = useState<'gcp' | 'azure' | 'elevenlabs'>('gcp');
-  const [authToken, setAuthToken] = useState('sk-gcp-ai-brain-88482910');
+  const [geminiModel, setGeminiModel] = useState('gemini-3.1-flash-live-preview');
+  const [geminiVoice, setGeminiVoice] = useState('Kore');
+  const [temperature, setTemperature] = useState(0.6);
+  const [authToken, setAuthToken] = useState('AIzaSy_GEMINI_LIVE_API_KEY_ACTIVE');
   const [showToken, setShowToken] = useState(false);
   const [region, setRegion] = useState('United States (us-east-1)');
   const [isSavedToast, setIsSavedToast] = useState(false);
@@ -188,50 +188,95 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ language }) => {
             </div>
           </div>
 
-          {/* Voice Services (STT/TTS) */}
+          {/* Gemini Live Voice Engine (Native GenAI) */}
           <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs">
-            <div className="flex items-center gap-2.5 mb-6 border-b border-slate-100 pb-4">
-              <Mic className="w-5 h-5 text-indigo-600" />
-              <h3 className="font-bold text-lg text-slate-900">
-                {getTranslation(language, 'voiceSynthesizer')}
-              </h3>
+            <div className="flex items-center justify-between mb-6 border-b border-slate-100 pb-4">
+              <div className="flex items-center gap-2.5">
+                <Mic className="w-5 h-5 text-indigo-600" />
+                <h3 className="font-bold text-lg text-slate-900">
+                  {getTranslation(language, 'voiceSynthesizer')} (Gemini Live API)
+                </h3>
+              </div>
+              <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2.5 py-1 rounded-full border border-emerald-300 uppercase tracking-wider flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span>Nativo Google GenAI</span>
+              </span>
             </div>
 
             <div className="space-y-4">
-              {/* Provider Selector Cards */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
-                  {getTranslation(language, 'primaryProvider')}
-                </label>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  {[
-                    { id: 'gcp', label: 'Google Cloud', icon: <Cloud className="w-5 h-5" /> },
-                    { id: 'azure', label: 'Azure Speech', icon: <Server className="w-5 h-5" /> },
-                    { id: 'elevenlabs', label: 'ElevenLabs', icon: <Radio className="w-5 h-5" /> },
-                  ].map((p) => {
-                    const isSelected = voiceProvider === p.id;
-                    return (
-                      <div
-                        key={p.id}
-                        onClick={() => setVoiceProvider(p.id as any)}
-                        className={`p-3.5 rounded-xl border cursor-pointer flex items-center justify-center gap-2.5 transition-all ${
-                          isSelected
-                            ? 'border-indigo-500 bg-indigo-50/70 text-indigo-700 font-bold shadow-2xs'
-                            : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300'
-                        }`}
-                      >
-                        {p.icon}
-                        <span className="text-xs">{p.label}</span>
-                      </div>
-                    );
-                  })}
+              {/* Model & Prebuilt Voice Selection */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
+                    Modelo de Voz Multimodal
+                  </label>
+                  <select
+                    value={geminiModel}
+                    onChange={(e) => setGeminiModel(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3 text-slate-900 text-xs font-medium focus:bg-white focus:border-indigo-500 focus:outline-none cursor-pointer font-mono"
+                  >
+                    <option value="gemini-3.1-flash-live-preview">gemini-3.1-flash-live-preview (Oficial)</option>
+                    <option value="gemini-flash-latest">gemini-flash-latest (Producción)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
+                    Voz Sintetizada Predeterminada
+                  </label>
+                  <select
+                    value={geminiVoice}
+                    onChange={(e) => setGeminiVoice(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3 text-slate-900 text-xs font-medium focus:bg-white focus:border-indigo-500 focus:outline-none cursor-pointer"
+                  >
+                    <option value="Kore">Kore (Ejecutiva Femenina - Costa Rica)</option>
+                    <option value="Puck">Puck (Juvenil Dinámico)</option>
+                    <option value="Charon">Charon (Grave Profesional)</option>
+                    <option value="Aoede">Aoede (Cálida / Atención Cliente)</option>
+                    <option value="Fenrir">Fenrir (Corporativo / Asesor)</option>
+                  </select>
                 </div>
               </div>
 
-              {/* Authentication Token Input */}
-              <div>
+              {/* Temperature Slider & Audio Format */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                <div>
+                  <div className="flex justify-between items-center mb-1.5">
+                    <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                      Temperatura de Inferencia
+                    </label>
+                    <span className="text-xs font-mono font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">
+                      {temperature}
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0.1"
+                    max="1.0"
+                    step="0.05"
+                    value={temperature}
+                    onChange={(e) => setTemperature(parseFloat(e.target.value))}
+                    className="w-full accent-indigo-600 cursor-pointer"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
+                    Formato de Audio Bidireccional
+                  </label>
+                  <input
+                    type="text"
+                    disabled
+                    value="PCM 16kHz / 16-bit Mono (RTP Asterisk ARI)"
+                    className="w-full bg-slate-100 border border-slate-200 rounded-xl py-2 px-3 text-slate-600 text-xs font-mono font-medium"
+                  />
+                </div>
+              </div>
+
+              {/* Gemini API Key Token */}
+              <div className="pt-2 border-t border-slate-100">
                 <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
-                  {getTranslation(language, 'authToken')}
+                  Gemini API Secret Key (Server-Side)
                 </label>
                 <div className="relative">
                   <input
@@ -248,6 +293,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ language }) => {
                     {showToken ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
+                <p className="text-[11px] text-slate-500 mt-1.5">
+                  Las llamadas de voz se procesan 100% servidor a servidor con la API @google/genai.
+                </p>
               </div>
             </div>
           </div>

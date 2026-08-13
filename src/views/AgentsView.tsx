@@ -454,6 +454,18 @@ Resolve customer issues, query order status, and escalate when needed.`,
                   />
                 </div>
 
+                {/* Gemini Live Voice Engine Native Indicator */}
+                <div className="p-3.5 bg-indigo-950/40 border border-indigo-800/60 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs">
+                  <div className="flex items-center gap-2.5 text-indigo-200 font-medium">
+                    <Headphones className="w-4 h-4 text-indigo-400 shrink-0" />
+                    <span>Motor de Voz Agéntico: <strong className="text-white font-semibold">Gemini Live API (Sintetización Nativa)</strong></span>
+                  </div>
+                  <span className="text-[10px] font-bold text-emerald-300 bg-emerald-950/80 px-2.5 py-1 rounded-lg border border-emerald-800/80 uppercase tracking-wider flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span>Procesamiento Multimodal Gemini</span>
+                  </span>
+                </div>
+
                 {/* Knowledge Base Documents */}
                 <div className="space-y-2">
                   <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
