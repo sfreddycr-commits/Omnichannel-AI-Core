@@ -93,6 +93,16 @@ export class VoiceBridgeService {
       } catch {}
     }
 
+    // Refresh URL configuration from environment if changed at runtime
+    const rawAriWsUrl = process.env.ARI_WS_URL || this.ariUrl;
+    this.ariUrl = rawAriWsUrl;
+    try {
+      const urlObj = new URL(rawAriWsUrl);
+      const httpProtocol = urlObj.protocol === 'wss:' ? 'https:' : 'http:';
+      this.ariHttpBase = `${httpProtocol}//${urlObj.host}/ari`;
+      this.apiKeyParam = urlObj.searchParams.get('api_key') || 'admin:adminpass';
+    } catch {}
+
     try {
       this.ariWs = new WebSocket(this.ariUrl);
 
