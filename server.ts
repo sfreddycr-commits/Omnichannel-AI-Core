@@ -305,6 +305,41 @@ app.post('/api/kira/process', async (req, res) => {
   res.json(result);
 });
 
+// Kira Core canonical chat endpoint — accepts { messages: [{role, content}], system? }
+// Aliases /api/kira/process with an OpenAI-style messages array.
+app.post('/api/chat', async (req, res) => {
+  const body = req.body || {};
+  const messages: Array<{ role: string; content: string }> = Array.isArray(body.messages) ? body.messages : [];
+  if (messages.length === 0) {
+    return res.status(400).json({ error: 'messages[] is required and must be non-empty' });
+  }
+
+  const lastUser = [...messages].reverse().find(m => m.role === 'user');
+  if (!lastUser || typeof lastUser.content !== 'string') {
+    return res.status(400).json({ error: 'last user message with string content is required' });
+  }
+
+  const history = messages
+    .slice(0, messages.length - 1)
+    .map(m => ({ role: (m.role === 'assistant' ? 'model' : m.role) as 'user' | 'model', content: m.content || '' }));
+
+  const profileId = body.profileId || 'kira-ventas';
+
+  const result = await kiraEngineInstance.processMessage(
+    lastUser.content,
+    history,
+    profileId
+  );
+
+  res.json({
+    agent: result.agentName,
+    reply: result.replyText,
+    toolCalls: result.toolCallsExecuted,
+    isEscalated: result.isEscalated,
+    timestamp: new Date().toISOString(),
+  });
+});
+
 // --- WEBSOCKET SERVER FOR REALTIME AUDIO / FEED ---
 const wss = new WebSocketServer({ server });
 
