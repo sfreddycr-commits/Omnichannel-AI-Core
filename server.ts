@@ -6,6 +6,7 @@ import { createServer as createViteServer } from 'vite';
 import { processAgentMessage } from './src/services/geminiAgentEngine';
 import { kiraEngineInstance } from './src/services/kira/KiraEngine';
 import { DESIGNSOFT_CATALOG, executeCrearCotizacion, executeConsultarTicket } from './src/services/designsoftCrmService';
+import { voiceBridgeService } from './src/services/VoiceBridgeService';
 
 const app = express();
 const server = http.createServer(app);
@@ -305,38 +306,36 @@ app.post('/api/kira/process', async (req, res) => {
   res.json(result);
 });
 
-// Kira Core canonical chat endpoint — accepts { messages: [{role, content}], system? }
-// Aliases /api/kira/process with an OpenAI-style messages array.
-app.post('/api/chat', async (req, res) => {
-  const body = req.body || {};
-  const messages: Array<{ role: string; content: string }> = Array.isArray(body.messages) ? body.messages : [];
-  if (messages.length === 0) {
-    return res.status(400).json({ error: 'messages[] is required and must be non-empty' });
-  }
+// Asterisk ARI Voice Bridge Endpoints
+app.get('/api/voice-bridge/status', (req, res) => {
+  res.json(voiceBridgeService.getStatus());
+});
 
-  const lastUser = [...messages].reverse().find(m => m.role === 'user');
-  if (!lastUser || typeof lastUser.content !== 'string') {
-    return res.status(400).json({ error: 'last user message with string content is required' });
-  }
+app.post('/api/voice-bridge/simulate', async (req, res) => {
+  const { callerNumber, callerName } = req.body;
+  const timeStr = new Date().toLocaleTimeString('es-CR', { hour: 'numeric', minute: '2-digit' });
 
-  const history = messages
-    .slice(0, messages.length - 1)
-    .map(m => ({ role: (m.role === 'assistant' ? 'model' : m.role) as 'user' | 'model', content: m.content || '' }));
-
-  const profileId = body.profileId || 'kira-ventas';
-
-  const result = await kiraEngineInstance.processMessage(
-    lastUser.content,
-    history,
-    profileId
+  const session = await voiceBridgeService.simulateAriCall(
+    callerNumber || '+506 8765-4321',
+    callerName || 'Soda El Buen Gusto (CallMyWay)'
   );
 
+  const newCall = {
+    id: session.channelId,
+    callerNumber: session.callerNumber,
+    callerName: session.callerName,
+    status: 'live',
+    assignedAgent: 'Kira Voice (ARI Stasis Bridge)',
+    durationSeconds: 1,
+    startTime: timeStr,
+    transcript: session.transcript
+  };
+
+  mockCalls.unshift(newCall);
   res.json({
-    agent: result.agentName,
-    reply: result.replyText,
-    toolCalls: result.toolCallsExecuted,
-    isEscalated: result.isEscalated,
-    timestamp: new Date().toISOString(),
+    message: 'Llamada ARI simulada iniciada exitosamente con Gemini Live API',
+    session,
+    call: newCall
   });
 });
 
@@ -355,12 +354,25 @@ wss.on('connection', (ws, req) => {
   ws.on('message', async (data) => {
     try {
       const parsed = JSON.parse(data.toString());
-      if (parsed.type === 'VOIP_AUDIO_STREAM') {
-        // Echo or process real-time voice stream
-        ws.send(JSON.stringify({
-          type: 'VOIP_TRANSCRIPTION_CHUNK',
-          text: 'Procesando audio PCM 16kHz en Gemini Live API...'
-        }));
+
+      if (parsed.type === 'ATTACH_AUDIO_BRIDGE') {
+        if (parsed.channelId) {
+          voiceBridgeService.attachAudioBridgeWs(parsed.channelId, ws);
+          ws.send(JSON.stringify({
+            type: 'AUDIO_BRIDGE_ATTACHED',
+            channelId: parsed.channelId,
+            status: 'connected'
+          }));
+        }
+      } else if (parsed.type === 'VOIP_AUDIO_STREAM') {
+        if (parsed.channelId && parsed.pcmBase64) {
+          voiceBridgeService.processInboundAudio(parsed.channelId, parsed.pcmBase64);
+        } else {
+          ws.send(JSON.stringify({
+            type: 'VOIP_TRANSCRIPTION_CHUNK',
+            text: 'Procesando stream de audio PCM 16kHz en Gemini Live API...'
+          }));
+        }
       }
     } catch (e) {
       console.error('WS Error:', e);
@@ -370,6 +382,9 @@ wss.on('connection', (ws, req) => {
 
 // --- VITE MIDDLEWARE & SERVER START ---
 async function startServer() {
+  // Start Asterisk ARI Voice Bridge Service
+  voiceBridgeService.start();
+
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
       server: { middlewareMode: true },
