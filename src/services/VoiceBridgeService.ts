@@ -1,5 +1,6 @@
 import { WebSocket } from 'ws';
 import { GoogleGenAI, Modality } from '@google/genai';
+import { DEPARTMENT_PROFILES, getProfileByDtmfKey, DepartmentProfile } from './kira/DepartmentProfiles';
 
 export interface ActiveVoiceSession {
   channelId: string;
@@ -7,6 +8,7 @@ export interface ActiveVoiceSession {
   callerName: string;
   startTime: Date;
   status: 'connecting' | 'answered' | 'active' | 'ended';
+  currentDepartment?: string;
   geminiSession?: any;
   audioBridgeWs?: WebSocket;
   transcript: Array<{ speaker: 'Cliente' | 'Kira Voice'; text: string; timestamp: string }>;
@@ -176,6 +178,13 @@ export class VoiceBridgeService {
         break;
       }
 
+      case 'ChannelDtmfReceived': {
+        const digit = event.digit;
+        console.log(`[VoiceBridge] 🎹 Asterisk ARI DTMF received on channel ${channelId}: '${digit}'`);
+        await this.handleDtmfDigit(channelId, digit);
+        break;
+      }
+
       case 'ChannelHangupRequest':
       case 'StasisEnd': {
         console.log(`[VoiceBridge] 📴 Call hangup detected for channel ${channelId}`);
@@ -214,6 +223,7 @@ export class VoiceBridgeService {
    */
   public async initVoiceSession(channelId: string, callerNumber: string, callerName: string): Promise<ActiveVoiceSession> {
     const timeStr = new Date().toLocaleTimeString('es-CR', { hour: 'numeric', minute: '2-digit' });
+    const initialGreeting = '¡Gracias por comunicarse a Wiazart by designsoftcr.com! Mi nombre es Kira. ¿En qué le puedo colaborar hoy?';
     
     const sessionRecord: ActiveVoiceSession = {
       channelId,
@@ -221,10 +231,11 @@ export class VoiceBridgeService {
       callerName,
       startTime: new Date(),
       status: 'answered',
+      currentDepartment: 'commercial',
       transcript: [
         {
           speaker: 'Kira Voice',
-          text: '¡Hola! Bienvenido a Wiazart by designsoftcr.com. ¿En qué le puedo colaborar con nuestros sistemas hoy?',
+          text: initialGreeting,
           timestamp: timeStr
         }
       ]
@@ -234,7 +245,8 @@ export class VoiceBridgeService {
     this.totalCallsHandled++;
 
     try {
-      // Connect to Gemini Live API using @google/genai
+      // Connect to Gemini Live API using @google/genai with Commercial department profile as default
+      const defaultProfile = DEPARTMENT_PROFILES.commercial;
       const geminiLiveSession = await this.ai.live.connect({
         model: 'gemini-3.1-flash-live-preview',
         config: {
@@ -244,13 +256,7 @@ export class VoiceBridgeService {
               prebuiltVoiceConfig: { voiceName: 'Kore' } // Professional female voice
             }
           },
-          systemInstruction: `Eres "Kira Voice", la ingeniera y asesora comercial hablada de Wiazart by designsoftcr.com (15 años en Costa Rica).
-Hablas de forma fluida, sumamente educada y profesional en español costarricense usando el trato de "usted".
-REGLAS Y MODO DE OPERACIÓN:
-- El proceso de pago es 100% en línea.
-- No es necesario ir ni presentarse en la tienda física.
-- El cliente o negocio solo necesita contar con un único punto de control.
-Manejas precios en Colones (₡) y Dólares ($). Respondes de forma directa, concisa y adecuada para llamadas de voz telefónicas.`
+          systemInstruction: defaultProfile.systemPrompt
         },
         callbacks: {
           onmessage: (message: any) => {
@@ -269,12 +275,90 @@ Manejas precios en Colones (₡) y Dólares ($). Respondes de forma directa, con
       sessionRecord.status = 'active';
       console.log(`[VoiceBridge] ⚡ Gemini Live API session connected for Call Channel ${channelId}`);
 
+      // Force initial automatic spoken greeting turn
+      try {
+        (geminiLiveSession as any).sendClientContent({
+          turns: [
+            {
+              role: 'user',
+              parts: [
+                {
+                  text: `Saluda al cliente de inmediato diciendo literalmente en voz alta: ${initialGreeting}`
+                }
+              ]
+            }
+          ],
+          turnComplete: true
+        });
+      } catch (greetErr: any) {
+        console.warn(`[VoiceBridge] Initial greeting trigger note for channel ${channelId}:`, greetErr.message);
+      }
+
     } catch (err: any) {
       console.warn(`[VoiceBridge] Gemini Live API connection fallback for channel ${channelId}:`, err.message);
       sessionRecord.status = 'active';
     }
 
     return sessionRecord;
+  }
+
+  /**
+   * Handles DTMF digits ('1', '2', '3') from Asterisk or Softphone to switch department profiles.
+   */
+  public async handleDtmfDigit(channelId: string, digit: string): Promise<void> {
+    const session = this.activeSessions.get(channelId);
+    if (!session) return;
+
+    const profile = getProfileByDtmfKey(digit);
+    session.currentDepartment = profile.id;
+    const timeStr = new Date().toLocaleTimeString('es-CR', { hour: 'numeric', minute: '2-digit' });
+
+    console.log(`[VoiceBridge] 🎹 DTMF digit '${digit}' received on channel ${channelId}. Switching department to: ${profile.name}`);
+
+    const transferText = `[Transferencia IVR Opción ${digit}]: ${profile.name}`;
+    session.transcript.push({
+      speaker: 'Kira Voice',
+      text: transferText,
+      timestamp: timeStr
+    });
+
+    if (session.geminiSession) {
+      try {
+        (session.geminiSession as any).sendClientContent({
+          turns: [
+            {
+              role: 'user',
+              parts: [
+                {
+                  text: `[CAMBIO DE DEPARTAMENTO IVR]: El cliente presionó la tecla ${digit} (${profile.name}). Saluda brevemente confirmando que le atiendes en el departamento de ${profile.name} y pregunta cómo le puedes colaborar.`
+                }
+              ]
+            }
+          ],
+          turnComplete: true
+        });
+      } catch (err: any) {
+        console.warn(`[VoiceBridge] Could not send DTMF prompt to Gemini on channel ${channelId}:`, err.message);
+      }
+    }
+
+    if (session.audioBridgeWs && session.audioBridgeWs.readyState === WebSocket.OPEN) {
+      session.audioBridgeWs.send(JSON.stringify({
+        type: 'VOIP_DEPARTMENT_SWITCHED',
+        channelId,
+        departmentId: profile.id,
+        departmentName: profile.name,
+        digit
+      }));
+
+      session.audioBridgeWs.send(JSON.stringify({
+        type: 'VOIP_TRANSCRIPTION_CHUNK',
+        channelId,
+        text: transferText,
+        speaker: 'Kira Voice',
+        timestamp: timeStr
+      }));
+    }
   }
 
   /**

@@ -167,7 +167,7 @@ export const SoftphoneModal: React.FC<SoftphoneModalProps> = ({
               setTranscripts([
                 {
                   speaker: 'Kira Voice',
-                  text: '¡Hola! Bienvenido a Wiazart. ¿En qué le puedo colaborar hoy?',
+                  text: '¡Gracias por comunicarse a Wiazart by designsoftcr.com! Mi nombre es Kira. ¿En qué le puedo colaborar hoy?',
                   timestamp: new Date().toLocaleTimeString('es-CR', { hour: 'numeric', minute: '2-digit' })
                 }
               ]);
@@ -185,6 +185,8 @@ export const SoftphoneModal: React.FC<SoftphoneModalProps> = ({
               setTimeout(() => setIsReceivingAudio(false), 800);
             }
 
+          } else if (msg.type === 'VOIP_DEPARTMENT_SWITCHED' && msg.departmentName) {
+            setStatusMessage(`Opción ${msg.digit} • ${msg.departmentName}`);
           } else if (msg.type === 'VOIP_TRANSCRIPTION_CHUNK' && msg.text) {
             const timeStr = msg.timestamp || new Date().toLocaleTimeString('es-CR', { hour: 'numeric', minute: '2-digit' });
             setTranscripts(prev => [
@@ -482,6 +484,39 @@ export const SoftphoneModal: React.FC<SoftphoneModalProps> = ({
                   <Delete className="w-4 h-4" />
                 </button>
               )}
+            </div>
+
+            {/* IVR Department Quick Buttons (DTMF 1, 2, 3) */}
+            <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-2.5">
+              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-1.5 text-center">
+                Menú IVR por Tonos DTMF
+              </span>
+              <div className="grid grid-cols-3 gap-1.5">
+                <button
+                  onClick={() => handleKeypadPress('1')}
+                  className="py-1.5 px-2 bg-slate-800 hover:bg-sky-900/60 text-sky-300 rounded-lg text-[11px] font-medium border border-slate-700/60 transition-colors flex items-center justify-center space-x-1"
+                  title="DTMF 1: Ventas y Cotizaciones"
+                >
+                  <span className="font-bold font-mono">1</span>
+                  <span className="truncate">Ventas</span>
+                </button>
+                <button
+                  onClick={() => handleKeypadPress('2')}
+                  className="py-1.5 px-2 bg-slate-800 hover:bg-emerald-900/60 text-emerald-300 rounded-lg text-[11px] font-medium border border-slate-700/60 transition-colors flex items-center justify-center space-x-1"
+                  title="DTMF 2: Soporte Técnico Nivel 2"
+                >
+                  <span className="font-bold font-mono">2</span>
+                  <span className="truncate">Soporte</span>
+                </button>
+                <button
+                  onClick={() => handleKeypadPress('3')}
+                  className="py-1.5 px-2 bg-slate-800 hover:bg-amber-900/60 text-amber-300 rounded-lg text-[11px] font-medium border border-slate-700/60 transition-colors flex items-center justify-center space-x-1"
+                  title="DTMF 3: Facturación ATV v4.3"
+                >
+                  <span className="font-bold font-mono">3</span>
+                  <span className="truncate">Facturación</span>
+                </button>
+              </div>
             </div>
 
             {/* Tactile Keypad 4x3 Grid */}

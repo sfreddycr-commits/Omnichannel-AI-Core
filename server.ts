@@ -415,6 +415,9 @@ wss.on('connection', (ws, req) => {
       } else if (parsed.type === 'DTMF_DIGIT') {
         const chanId = parsed.channelId || activeChannelIdForConnection;
         console.log(`[Softphone WS] DTMF Digit '${parsed.digit}' received for channel ${chanId}`);
+        if (chanId && parsed.digit) {
+          voiceBridgeService.handleDtmfDigit(chanId, parsed.digit);
+        }
         ws.send(JSON.stringify({
           type: 'DTMF_ACK',
           digit: parsed.digit,
