@@ -1,6 +1,6 @@
 {
-  "name": "AI Brain Terminal",
-  "description": "Enterprise AI Brain infrastructure platform with neural core authentication, global operations dashboard, AI agent configuration, live omnichannel feed, and infrastructure settings with English and Spanish language toggle.",
+  "name": "Wiazart by designsoftcr.com — Omnichannel AI Core",
+  "description": "Wiazart by designsoftcr.com — Enterprise Omnichannel AI Core platform with neural core authentication, global operations dashboard, AI agent configuration, live omnichannel feed, and infrastructure settings.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

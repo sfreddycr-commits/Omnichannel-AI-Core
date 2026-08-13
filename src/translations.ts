@@ -3,10 +3,10 @@ import { Language } from './types';
 export const translations = {
   en: {
     // Brand & Header
-    brandName: 'AI Brain',
-    brandSub: 'Infrastructure v2.4',
-    designSoft: 'DesignSoft',
-    terminalTitle: 'AI Brain Terminal',
+    brandName: 'Wiazart',
+    brandSub: 'by designsoftcr.com',
+    designSoft: 'by designsoftcr.com',
+    terminalTitle: 'Wiazart by designsoftcr.com',
     status: 'Status',
     capacity: 'Capacity',
     users15k: '15k Users',
@@ -133,10 +133,10 @@ export const translations = {
   },
   es: {
     // Brand & Header
-    brandName: 'AI Brain',
-    brandSub: 'Infraestructura v2.4',
-    designSoft: 'DesignSoft',
-    terminalTitle: 'Terminal AI Brain',
+    brandName: 'Wiazart',
+    brandSub: 'by designsoftcr.com',
+    designSoft: 'by designsoftcr.com',
+    terminalTitle: 'Wiazart by designsoftcr.com',
     status: 'Estado',
     capacity: 'Capacidad',
     users15k: '15k Usuarios',

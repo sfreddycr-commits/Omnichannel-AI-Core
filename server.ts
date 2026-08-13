@@ -114,10 +114,21 @@ let mockAgents = [
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
-    service: 'DesignSoft Omnichannel AI Core',
+    service: 'Wiazart by designsoftcr.com',
     version: '2.5.0',
     geminiKeyStatus: process.env.GEMINI_API_KEY ? 'configured' : 'missing',
     timestamp: new Date().toISOString()
+  });
+});
+
+// App Info
+app.get('/api/info', (req, res) => {
+  res.json({
+    name: 'Wiazart',
+    signature: 'by designsoftcr.com',
+    service: 'Wiazart by designsoftcr.com',
+    title: 'Wiazart by designsoftcr.com — Omnichannel AI Core',
+    version: '2.5.0'
   });
 });
 
@@ -302,7 +313,7 @@ wss.on('connection', (ws, req) => {
 
   ws.send(JSON.stringify({
     type: 'CONNECTION_ESTABLISHED',
-    message: 'Conectado al servidor de tiempo real DesignSoft Omnichannel Core',
+    message: 'Conectado al servidor de tiempo real Wiazart by designsoftcr.com',
     timestamp: new Date().toISOString()
   }));
 
@@ -339,7 +350,7 @@ async function startServer() {
   }
 
   server.listen(PORT, "0.0.0.0", () => {
-    console.log(`🚀 DesignSoft Omnichannel Server running on http://localhost:${PORT}`);
+    console.log(`🚀 Wiazart by designsoftcr.com Server running on http://localhost:${PORT}`);
   });
 }
 
