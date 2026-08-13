@@ -303,37 +303,40 @@ Manejas precios en Colones (₡) y Dólares ($). Respondes de forma directa, con
     const session = this.activeSessions.get(channelId);
     if (!session) return;
 
-    // Check for audio output chunk
-    const audioData = message.serverContent?.modelTurn?.parts?.[0]?.inlineData?.data;
-    if (audioData) {
-      // Stream audio chunk back to Asterisk via AudioBridge WebSocket / RTP
-      if (session.audioBridgeWs && session.audioBridgeWs.readyState === WebSocket.OPEN) {
-        session.audioBridgeWs.send(JSON.stringify({
-          type: 'OUTBOUND_PCM_AUDIO',
-          channelId,
-          audioPcm24k: audioData
-        }));
+    const parts = message.serverContent?.modelTurn?.parts || [];
+    for (const part of parts) {
+      // Check for raw PCM audio output chunk
+      if (part.inlineData?.data) {
+        const audioData = part.inlineData.data;
+        if (session.audioBridgeWs && session.audioBridgeWs.readyState === WebSocket.OPEN) {
+          session.audioBridgeWs.send(JSON.stringify({
+            type: 'OUTBOUND_PCM_AUDIO',
+            channelId,
+            audioPcm24k: audioData,
+            pcmBase64: audioData
+          }));
+        }
       }
-    }
 
-    // Capture text transcriptions if outputAudioTranscription is enabled
-    const outputText = message.serverContent?.modelTurn?.parts?.[0]?.text;
-    if (outputText) {
-      const timeStr = new Date().toLocaleTimeString('es-CR', { hour: 'numeric', minute: '2-digit' });
-      session.transcript.push({
-        speaker: 'Kira Voice',
-        text: outputText,
-        timestamp: timeStr
-      });
-
-      if (session.audioBridgeWs && session.audioBridgeWs.readyState === WebSocket.OPEN) {
-        session.audioBridgeWs.send(JSON.stringify({
-          type: 'VOIP_TRANSCRIPTION_CHUNK',
-          channelId,
-          text: outputText,
+      // Capture text transcription chunks
+      if (part.text) {
+        const outputText = part.text;
+        const timeStr = new Date().toLocaleTimeString('es-CR', { hour: 'numeric', minute: '2-digit' });
+        session.transcript.push({
           speaker: 'Kira Voice',
+          text: outputText,
           timestamp: timeStr
-        }));
+        });
+
+        if (session.audioBridgeWs && session.audioBridgeWs.readyState === WebSocket.OPEN) {
+          session.audioBridgeWs.send(JSON.stringify({
+            type: 'VOIP_TRANSCRIPTION_CHUNK',
+            channelId,
+            text: outputText,
+            speaker: 'Kira Voice',
+            timestamp: timeStr
+          }));
+        }
       }
     }
   }

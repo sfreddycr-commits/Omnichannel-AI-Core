@@ -406,13 +406,10 @@ wss.on('connection', (ws, req) => {
 
       } else if (parsed.type === 'VOIP_AUDIO_STREAM' || parsed.type === 'INBOUND_PCM_AUDIO') {
         const chanId = parsed.channelId || activeChannelIdForConnection;
-        const pcmData = parsed.pcmBase64 || parsed.pcmData || parsed.audio;
+        const pcmData = parsed.audioPcm16k || parsed.pcmBase64 || parsed.pcmData || parsed.audio;
 
         if (chanId && pcmData) {
           voiceBridgeService.processInboundAudio(chanId, pcmData);
-        } else if (parsed.textInput && chanId) {
-          // If text input sent via softphone audio stream channel
-          voiceBridgeService.processInboundAudio(chanId, '');
         }
 
       } else if (parsed.type === 'DTMF_DIGIT') {
