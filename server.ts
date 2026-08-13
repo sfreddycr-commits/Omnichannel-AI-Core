@@ -382,9 +382,6 @@ wss.on('connection', (ws, req) => {
 
 // --- VITE MIDDLEWARE & SERVER START ---
 async function startServer() {
-  // Start Asterisk ARI Voice Bridge Service
-  voiceBridgeService.start();
-
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
       server: { middlewareMode: true },
@@ -401,7 +398,6 @@ async function startServer() {
 
   server.listen(PORT, "0.0.0.0", () => {
     console.log(`🚀 Wiazart by designsoftcr.com Server running on http://localhost:${PORT}`);
-    // Start the ARI WebSocket connector so /api/voice-bridge/status returns ariConnected=true
     voiceBridgeService.start();
   });
 }

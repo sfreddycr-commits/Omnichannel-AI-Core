@@ -4,8 +4,7 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 
 # Copy dependency files
-COPY package.json ./
-COPY bun.lock* ./
+COPY package.json bun.lock* ./
 
 # Install dependencies
 RUN npm install
@@ -13,28 +12,33 @@ RUN npm install
 # Copy source code
 COPY . .
 
-# Build Vite static assets
+# Build Vite static assets and esbuild server bundle
 RUN npm run build
 
-# Production stage using Nginx
-FROM nginx:alpine AS runner
+# Production stage using Node 20 Alpine
+FROM node:20-alpine AS runner
 
-# Copy built dist folder from builder stage
-COPY --from=builder /app/dist /usr/share/nginx/html
+WORKDIR /app
 
-# Custom Nginx config to handle SPA client-side routing and fallback
-RUN echo 'server { \
-    listen 3000; \
-    listen 80; \
-    server_name _; \
-    location / { \
-        root /usr/share/nginx/html; \
-        index index.html index.htm; \
-        try_files $uri $uri/ /index.html; \
-    } \
-}' > /etc/nginx/conf.d/default.conf
+# Install tini for init process management
+RUN apk add --no-cache tini
+
+# Copy package metadata and install production dependencies
+COPY package.json ./
+RUN npm install --only=production
+
+# Copy built application from builder stage
+COPY --from=builder /app/dist ./dist
+
+# Set production environment variables
+ENV NODE_ENV=production
+ENV PORT=3000
 
 EXPOSE 3000
-EXPOSE 80
 
-CMD ["nginx", "-g", "daemon off;"]
+# Use non-root user
+USER node
+
+ENTRYPOINT ["/sbin/tini", "--"]
+CMD ["node", "dist/server.cjs"]
+
