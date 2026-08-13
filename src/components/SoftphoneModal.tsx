@@ -348,10 +348,14 @@ export const SoftphoneModal: React.FC<SoftphoneModalProps> = ({
 
     // Interactive fallback reply
     setTimeout(() => {
-      let kiraReply = 'Le confirmo que el sistema Wiazart CallCenter está listo para procesar sus pedidos y cotizaciones en Colones y Dólares.';
-      if (userMessage.toLowerCase().includes('precio') || userMessage.toLowerCase().includes('cotiz')) {
-        kiraReply = 'Con gusto. El plan empresarial de Wiazart CallCenter tiene un valor de $250 USD o ₡135,000 colones mensuales. ¿Desea registrar la cotización en el CRM?';
-      } else if (userMessage.toLowerCase().includes('ticket') || userMessage.toLowerCase().includes('soporte')) {
+      let kiraReply = 'Le confirmo que el proceso de pago es totalmente en línea. No es necesario ir a la tienda; usted solo necesita contar con un punto de control.';
+      const msgLower = userMessage.toLowerCase();
+
+      if (msgLower.includes('pago') || msgLower.includes('pagar') || msgLower.includes('en linea') || msgLower.includes('tienda') || msgLower.includes('control')) {
+        kiraReply = 'El proceso de pago es 100% en línea. No es necesario presentarse en la tienda física, ya que solo necesita un punto de control para operar.';
+      } else if (msgLower.includes('precio') || msgLower.includes('cotiz')) {
+        kiraReply = 'Con gusto. El plan empresarial de Wiazart CallCenter tiene un valor de $250 USD o ₡135,000 colones mensuales. El pago se realiza en línea y solo requiere un punto de control.';
+      } else if (msgLower.includes('ticket') || msgLower.includes('soporte')) {
         kiraReply = 'He consultado el CRM de Designsoft. Su ticket #DS-9102 está en estado ACTIVO y asignado al equipo técnico.';
       }
 
