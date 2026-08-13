@@ -57,6 +57,7 @@ export const SoftphoneModal: React.FC<SoftphoneModalProps> = ({
   const isMutedRef = useRef<boolean>(false);
   const isSpeakerOnRef = useRef<boolean>(true);
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const pingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const transcriptEndRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -149,13 +150,30 @@ export const SoftphoneModal: React.FC<SoftphoneModalProps> = ({
           callerName
         }));
         setStatusMessage('Enlazando con Gemini Live API...');
+
+        // Start client heartbeat interval every 15s to keep TCP connection alive
+        if (pingIntervalRef.current) clearInterval(pingIntervalRef.current);
+        pingIntervalRef.current = setInterval(() => {
+          if (ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({
+              type: 'PING',
+              timestamp: new Date().toISOString()
+            }));
+          }
+        }, 15000);
       };
 
       ws.onmessage = (event) => {
         try {
           const msg = JSON.parse(event.data);
 
-          if (msg.type === 'CALL_STARTED' || msg.type === 'AUDIO_BRIDGE_ATTACHED') {
+          if (msg.type === 'PING') {
+            // Respond automatically with PONG to server ping
+            ws.send(JSON.stringify({ type: 'PONG', timestamp: new Date().toISOString() }));
+            return;
+          } else if (msg.type === 'PONG') {
+            return;
+          } else if (msg.type === 'CALL_STARTED' || msg.type === 'AUDIO_BRIDGE_ATTACHED') {
             const activeChan = msg.channelId;
             setChannelId(activeChan);
             setCallStatus('active');
@@ -214,8 +232,12 @@ export const SoftphoneModal: React.FC<SoftphoneModalProps> = ({
         ]);
       };
 
-      ws.onclose = () => {
-        console.log('[Softphone] WS closed');
+      ws.onclose = (event) => {
+        if (pingIntervalRef.current) {
+          clearInterval(pingIntervalRef.current);
+          pingIntervalRef.current = null;
+        }
+        console.log(`[Softphone] WS closed. WasClean: ${event.wasClean}, Code: ${event.code}, Reason: '${event.reason || 'Sin razón dada'}'`);
       };
 
     } catch (err: any) {
@@ -323,6 +345,11 @@ export const SoftphoneModal: React.FC<SoftphoneModalProps> = ({
   const handleHangup = () => {
     setCallStatus('ended');
     setStatusMessage('Llamada finalizada');
+
+    if (pingIntervalRef.current) {
+      clearInterval(pingIntervalRef.current);
+      pingIntervalRef.current = null;
+    }
 
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN && channelId) {
       try {

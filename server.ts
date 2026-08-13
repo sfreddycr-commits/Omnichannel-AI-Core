@@ -347,6 +347,39 @@ wss.on('connection', (ws, req) => {
   console.log(`[WebSocket] Client connected on endpoint: ${reqUrl}`);
 
   let activeChannelIdForConnection: string | null = null;
+  let isAlive = true;
+  let lastActivityTime = Date.now();
+
+  ws.on('pong', () => {
+    isAlive = true;
+    lastActivityTime = Date.now();
+  });
+
+  // Keep-Alive / Heartbeat interval every 15 seconds
+  const pingInterval = setInterval(() => {
+    const elapsedSinceActivity = Date.now() - lastActivityTime;
+
+    // Terminate connection if no pong/message received in 45 seconds
+    if (!isAlive || elapsedSinceActivity > 45000) {
+      console.warn(`[Softphone WS] Connection timeout (>45s inactive). Terminating socket for channel: ${activeChannelIdForConnection}`);
+      clearInterval(pingInterval);
+      if (activeChannelIdForConnection) {
+        voiceBridgeService.closeVoiceSession(activeChannelIdForConnection);
+      }
+      return ws.terminate();
+    }
+
+    isAlive = false;
+    try {
+      ws.ping();
+      ws.send(JSON.stringify({
+        type: 'PING',
+        timestamp: new Date().toISOString()
+      }));
+    } catch {
+      clearInterval(pingInterval);
+    }
+  }, 15000);
 
   ws.send(JSON.stringify({
     type: 'CONNECTION_ESTABLISHED',
@@ -357,9 +390,19 @@ wss.on('connection', (ws, req) => {
 
   ws.on('message', async (data) => {
     try {
+      isAlive = true;
+      lastActivityTime = Date.now();
       const parsed = JSON.parse(data.toString());
 
-      if (parsed.type === 'START_SOFTPHONE_CALL') {
+      if (parsed.type === 'PONG') {
+        return;
+      } else if (parsed.type === 'PING') {
+        ws.send(JSON.stringify({
+          type: 'PONG',
+          timestamp: new Date().toISOString()
+        }));
+        return;
+      } else if (parsed.type === 'START_SOFTPHONE_CALL') {
         const ext = parsed.extension || '2000';
         const callerName = parsed.callerName || `Extensión Softphone ${ext}`;
 
@@ -439,7 +482,9 @@ wss.on('connection', (ws, req) => {
     }
   });
 
-  ws.on('close', () => {
+  ws.on('close', (code, reason) => {
+    clearInterval(pingInterval);
+    console.log(`[Softphone WS] Connection closed. Code: ${code}, Reason: '${reason.toString() || 'Sin razón dada'}' for channel: ${activeChannelIdForConnection}`);
     if (activeChannelIdForConnection) {
       voiceBridgeService.closeVoiceSession(activeChannelIdForConnection);
     }
