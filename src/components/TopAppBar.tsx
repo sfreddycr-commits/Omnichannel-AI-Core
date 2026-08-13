@@ -22,7 +22,6 @@ interface TopAppBarProps {
   onLanguageChange: (lang: Language) => void;
   onToggleTheme: () => void;
   onToggleMobileMenu: () => void;
-  onOpenSoftphone?: () => void;
   alerts: SystemAlert[];
   searchQuery: string;
   onSearchChange: (query: string) => void;
@@ -35,7 +34,6 @@ export const TopAppBar: React.FC<TopAppBarProps> = ({
   onLanguageChange,
   onToggleTheme,
   onToggleMobileMenu,
-  onOpenSoftphone,
   alerts,
   searchQuery,
   onSearchChange
@@ -86,20 +84,8 @@ export const TopAppBar: React.FC<TopAppBarProps> = ({
           </div>
         </div>
 
-        {/* Right Side: Status Metrics, Notifications, Softphone, Theme Toggle & Language */}
+        {/* Right Side: Status Metrics, Notifications, Theme Toggle & Language */}
         <div className="flex items-center gap-2 sm:gap-4 text-xs">
-          {/* Softphone Live Voice Test Button */}
-          {onOpenSoftphone && (
-            <button
-              onClick={onOpenSoftphone}
-              className="px-3 py-1.5 rounded-full font-bold text-[11px] bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white flex items-center gap-1.5 shadow-md shadow-sky-500/20 border border-sky-400/30 transition-all cursor-pointer active:scale-95 animate-pulse"
-              title="Iniciar prueba de voz en tiempo real con Agente Kira"
-            >
-              <PhoneCall className="w-3.5 h-3.5" />
-              <span>📞 Probar Voz (Kira Live)</span>
-            </button>
-          )}
-
           {/* Status Indicators */}
           <div className="hidden lg:flex items-center gap-4">
             <div className={`flex items-center gap-2 px-2.5 py-1 rounded-full border font-semibold text-[11px] ${

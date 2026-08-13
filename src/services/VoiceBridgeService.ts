@@ -321,6 +321,16 @@ Manejas precios en Colones (₡) y Dólares ($). Respondes de forma directa, con
         text: outputText,
         timestamp: timeStr
       });
+
+      if (session.audioBridgeWs && session.audioBridgeWs.readyState === WebSocket.OPEN) {
+        session.audioBridgeWs.send(JSON.stringify({
+          type: 'VOIP_TRANSCRIPTION_CHUNK',
+          channelId,
+          text: outputText,
+          speaker: 'Kira Voice',
+          timestamp: timeStr
+        }));
+      }
     }
   }
 

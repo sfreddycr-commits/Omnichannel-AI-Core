@@ -4,6 +4,7 @@ import { getAgents } from './api';
 import { SideNavBar } from './components/SideNavBar';
 import { TopAppBar } from './components/TopAppBar';
 import { SoftphoneModal } from './components/SoftphoneModal';
+import { FloatingSoftphoneWidget } from './components/FloatingSoftphoneWidget';
 import { LoginView } from './views/LoginView';
 import { DashboardView } from './views/DashboardView';
 import { AgentsView } from './views/AgentsView';
@@ -169,10 +170,16 @@ export default function App() {
         onLanguageChange={setLanguage}
         onToggleTheme={handleToggleTheme}
         onToggleMobileMenu={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-        onOpenSoftphone={() => setIsSoftphoneOpen(true)}
         alerts={alerts}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
+      />
+
+      {/* Floating Call Center WebRTC Softphone Button (Bottom Right) */}
+      <FloatingSoftphoneWidget
+        onClick={() => setIsSoftphoneOpen(true)}
+        isOpen={isSoftphoneOpen}
+        activeCallCount={0}
       />
 
       {/* WebRTC Softphone Testing Modal */}

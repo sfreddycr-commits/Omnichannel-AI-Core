@@ -343,10 +343,14 @@ app.post('/api/voice-bridge/simulate', async (req, res) => {
 const wss = new WebSocketServer({ server });
 
 wss.on('connection', (ws, req) => {
-  console.log('Client connected to WebSocket server');
+  const reqUrl = req.url || '';
+  console.log(`[WebSocket] Client connected on endpoint: ${reqUrl}`);
+
+  let activeChannelIdForConnection: string | null = null;
 
   ws.send(JSON.stringify({
     type: 'CONNECTION_ESTABLISHED',
+    endpoint: reqUrl,
     message: 'Conectado al servidor de tiempo real Wiazart by designsoftcr.com',
     timestamp: new Date().toISOString()
   }));
@@ -355,27 +359,89 @@ wss.on('connection', (ws, req) => {
     try {
       const parsed = JSON.parse(data.toString());
 
-      if (parsed.type === 'ATTACH_AUDIO_BRIDGE') {
-        if (parsed.channelId) {
-          voiceBridgeService.attachAudioBridgeWs(parsed.channelId, ws);
+      if (parsed.type === 'START_SOFTPHONE_CALL') {
+        const ext = parsed.extension || '2000';
+        const callerName = parsed.callerName || `Extensión Softphone ${ext}`;
+
+        const session = await voiceBridgeService.simulateAriCall(
+          `Ext ${ext}`,
+          callerName
+        );
+
+        activeChannelIdForConnection = session.channelId;
+        voiceBridgeService.attachAudioBridgeWs(session.channelId, ws);
+
+        const newCall = {
+          id: session.channelId,
+          callerNumber: session.callerNumber,
+          callerName: session.callerName,
+          status: 'live',
+          assignedAgent: 'Kira Voice (Softphone WebRTC Bridge)',
+          durationSeconds: 1,
+          startTime: new Date().toLocaleTimeString('es-CR', { hour: 'numeric', minute: '2-digit' }),
+          transcript: session.transcript
+        };
+
+        mockCalls.unshift(newCall);
+
+        ws.send(JSON.stringify({
+          type: 'CALL_STARTED',
+          channelId: session.channelId,
+          extension: ext,
+          status: 'active',
+          initialTranscript: session.transcript
+        }));
+
+      } else if (parsed.type === 'ATTACH_AUDIO_BRIDGE') {
+        const chanId = parsed.channelId || activeChannelIdForConnection;
+        if (chanId) {
+          activeChannelIdForConnection = chanId;
+          voiceBridgeService.attachAudioBridgeWs(chanId, ws);
           ws.send(JSON.stringify({
             type: 'AUDIO_BRIDGE_ATTACHED',
-            channelId: parsed.channelId,
+            channelId: chanId,
             status: 'connected'
           }));
         }
-      } else if (parsed.type === 'VOIP_AUDIO_STREAM') {
-        if (parsed.channelId && parsed.pcmBase64) {
-          voiceBridgeService.processInboundAudio(parsed.channelId, parsed.pcmBase64);
-        } else {
+
+      } else if (parsed.type === 'VOIP_AUDIO_STREAM' || parsed.type === 'INBOUND_PCM_AUDIO') {
+        const chanId = parsed.channelId || activeChannelIdForConnection;
+        const pcmData = parsed.pcmBase64 || parsed.pcmData || parsed.audio;
+
+        if (chanId && pcmData) {
+          voiceBridgeService.processInboundAudio(chanId, pcmData);
+        } else if (parsed.textInput && chanId) {
+          // If text input sent via softphone audio stream channel
+          voiceBridgeService.processInboundAudio(chanId, '');
+        }
+
+      } else if (parsed.type === 'DTMF_DIGIT') {
+        const chanId = parsed.channelId || activeChannelIdForConnection;
+        console.log(`[Softphone WS] DTMF Digit '${parsed.digit}' received for channel ${chanId}`);
+        ws.send(JSON.stringify({
+          type: 'DTMF_ACK',
+          digit: parsed.digit,
+          channelId: chanId
+        }));
+
+      } else if (parsed.type === 'HANGUP_CALL') {
+        const chanId = parsed.channelId || activeChannelIdForConnection;
+        if (chanId) {
+          await voiceBridgeService.closeVoiceSession(chanId);
           ws.send(JSON.stringify({
-            type: 'VOIP_TRANSCRIPTION_CHUNK',
-            text: 'Procesando stream de audio PCM 16kHz en Gemini Live API...'
+            type: 'CALL_ENDED',
+            channelId: chanId
           }));
         }
       }
     } catch (e) {
-      console.error('WS Error:', e);
+      console.error('[Softphone WS] Error processing message:', e);
+    }
+  });
+
+  ws.on('close', () => {
+    if (activeChannelIdForConnection) {
+      voiceBridgeService.closeVoiceSession(activeChannelIdForConnection);
     }
   });
 });
