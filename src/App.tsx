@@ -3,6 +3,7 @@ import { ViewMode, Language, ThemeMode, Agent, Session, SystemAlert } from './ty
 import { getAgents } from './api';
 import { SideNavBar } from './components/SideNavBar';
 import { TopAppBar } from './components/TopAppBar';
+import { SoftphoneModal } from './components/SoftphoneModal';
 import { LoginView } from './views/LoginView';
 import { DashboardView } from './views/DashboardView';
 import { AgentsView } from './views/AgentsView';
@@ -17,6 +18,7 @@ export default function App() {
   const [language, setLanguage] = useState<Language>('es'); // Default Spanish
   const [theme, setTheme] = useState<ThemeMode>('light'); // Default LIGHT theme per user request
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
+  const [isSoftphoneOpen, setIsSoftphoneOpen] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
 
   // Agents state fetched from API
@@ -167,9 +169,17 @@ export default function App() {
         onLanguageChange={setLanguage}
         onToggleTheme={handleToggleTheme}
         onToggleMobileMenu={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+        onOpenSoftphone={() => setIsSoftphoneOpen(true)}
         alerts={alerts}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
+      />
+
+      {/* WebRTC Softphone Testing Modal */}
+      <SoftphoneModal
+        isOpen={isSoftphoneOpen}
+        onClose={() => setIsSoftphoneOpen(false)}
+        language={language}
       />
 
       {/* Main Content Area */}
